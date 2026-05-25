@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <title>AI QA Assistant — Sarbani Mondal</title>
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --card: #ffffff;
+            --header: #1A5276;
+            --header2: #2E86C1;
+            --text: #1C2833;
+            --subtext: #666;
+            --border: #D6EAF8;
+            --result-bg: #F8F9FA;
+            --input-bg: #ffffff;
+            --stat-bg: #EBF5FB;
+        }
+        [data-theme="dark"] {
+            --bg: #0d1117;
+            --card: #161b22;
+            --header: #0f3460;
+            --header2: #1a4a8a;
+            --text: #e6edf3;
+            --subtext: #8b949e;
+            --border: #30363d;
+            --result-bg: #0d1117;
+            --input-bg: #0d1117;
+            --stat-bg: #1c2230;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); transition: all 0.3s; }
+
+        header {
+            background: var(--header);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        header h1 { font-size: 24px; }
+        header p { font-size: 12px; color: #AED6F1; }
+
+        .header-right { display: flex; align-items: center; gap: 16px; }
+
+        .dark-toggle {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .dark-toggle:hover { background: rgba(255,255,255,0.3); }
+
+        .subtitle {
+            background: var(--header2);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+        }
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            flex: 1;
+            background: var(--stat-bg);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border-left: 4px solid var(--header);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-2px); }
+        .stat-card h3 { font-size: 24px; color: var(--header2); }
+        .stat-card p { font-size: 12px; color: var(--subtext); }
+
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab {
+            padding: 12px 24px;
+            background: var(--card);
+            border: 2px solid var(--header);
+            color: var(--header2);
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        .tab:hover { background: var(--header2); color: white; }
+        .tab.active { background: var(--header); color: white; }
+
+        .section {
+            display: none;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
+        }
+        .section.active { display: block; }
+        .section h2 { color: var(--header2); margin-bottom: 8px; font-size: 20px; }
+        .section .desc { color: var(--subtext); margin-bottom: 20px; font-size: 14px; }
+
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-weight: bold; color: var(--text); margin-bottom: 6px; font-size: 14px; }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Arial;
+            background: var(--input-bg);
+            color: var(--text);
+            transition: border-color 0.2s;
+        }
+        input:focus, textarea:focus { outline: none; border-color: var(--header2); }
+        textarea { height: 100px; resize: vertical; }
+
+        .btn {
+            background: linear-gradient(135deg, var(--header), var(--header2));
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .result-box {
+            margin-top: 20px;
+            background: var(--result-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            white-space: pre-wrap;
+            font-size: 13px;
+            line-height: 1.7;
+            display: none;
+            color: var(--text);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .loading {
+            text-align: center;
+            color: var(--header2);
+            font-weight: bold;
+            padding: 20px;
+            display: none;
+        }
+        .loading::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+        @keyframes dots {
+            0% { content: ''; }
+            33% { content: '.'; }
+            66% { content: '..'; }
+            100% { content: '...'; }
+        }
+        .copy-btn {
+            background: #27AE60;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            margin-right: 8px;
+            transition: background 0.2s;
+        }
+        .copy-btn:hover { background: #219a52; }
+        .pdf-btn {
+            background: #E74C3C;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .pdf-btn:hover { background: #c0392b; }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--subtext);
+            font-size: 12px;
+            margin-top: 40px;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div>
+        <h1>🤖 AI QA Assistant</h1>
+        <p>Powered by Artificial Intelligence</p>
+    </div>
+    <div class="header-right">
+        <button class="dark-toggle" onclick="toggleDark()" id="darkBtn">🌙 Dark Mode</button>
+        <div style="text-align:right">
+            <p style="font-size:14px;font-weight:bold">Sarbani Mondal</p>
+            <p style="font-size:11px;color:#AED6F1">QA Analyst Portfolio Project</p>
+        </div>
+    </div>
+</header>
+
+<div class="subtitle">
+    Generate Professional Test Cases | Bug Reports | Test Data using AI
+</div>
+
+<div class="container">
+    <div class="stats">
+        <div class="stat-card"><h3>3</h3><p>AI Features</p></div>
+        <div class="stat-card"><h3 id="stat-count">0</h3><p>Generated Today</p></div>
+        <div class="stat-card"><h3>⚡</h3><p>Instant Results</p></div>
+        <div class="stat-card"><h3>🏆</h3><p>Professional Quality</p></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('testcases', this)">📋 Test Cases</button>
+        <button class="tab" onclick="showTab('bugreport', this)">🐛 Bug Report</button>
+        <button class="tab" onclick="showTab('testdata', this)">📊 Test Data</button>
+    </div>
+
+    <div id="testcases" class="section active">
+        <h2>📋 AI Test Case Generator</h2>
+        <p class="desc">Enter module details and AI will generate professional test cases instantly!</p>
+        <div class="form-group">
+            <label>Module Name</label>
+            <input type="text" id="tc-module" placeholder="e.g. Login Page, Registration, Shopping Cart">
+        </div>
+        <div class="form-group">
+            <label>Fields / Features</label>
+            <textarea id="tc-fields" placeholder="e.g. Email field, Password field, Submit button, Remember Me checkbox"></textarea>
+        </div>
+        <button class="btn" id="tc-btn" onclick="generateTestCases()">🤖 Generate Test Cases with AI</button>
+        <div class="loading" id="tc-loading">⏳ AI is generating professional test cases</div>
+        <div class="result-box" id="tc-result"></div>
+        <div id="tc-actions" style="display:none">
+            <button class="copy-btn" onclick="copyResult('tc-result')">📋 Copy Test Cases</button>
+            <a class="pdf-btn" href="/download-pdf">📄 Download PDF</a>
+        </div>
+    </div>
+
+    <div id="bugreport" class="section">
+        <h2>🐛 AI Bug Report Generator</h2>
+        <p class="desc">Describe the bug and AI generates a complete professional bug report!</p>
+        <div class="form-group">
+            <label>Describe the Bug</label>
+            <textarea id="bug-desc" style="height:120px" placeholder="e.g. When I enter invalid email abc@ in login page and click Submit, no validation error is shown"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Module</label>
+            <input type="text" id="bug-module" placeholder="e.g. Login, Registration, Cart">
+        </div>
+        <button class="btn" id="bug-btn" onclick="generateBugReport()">🤖 Generate Bug Report with AI</button>
+        <div class="loading" id="bug-loading">⏳ AI is creating professional bug report</div>
+        <div class="result-box" id="bug-result"></div>
+        <div id="bug-actions" style="display:none">
+            <button class="copy-btn" onclick="copyResult('bug-result')">📋 Copy Bug Report</button>
+        </div>
+    </div>
+
+    <div id="testdata" class="section">
+        <h2>📊 AI Test Data Generator</h2>
+        <p class="desc">Enter field type and AI generates valid and invalid test data sets!</p>
+        <div class="form-group">
+            <label>Field Type</label>
+            <input type="text" id="td-field" placeholder="e.g. Email field, Phone number, Password, Age">
+        </div>
+        <div class="form-group">
+            <label>Additional Requirements (Optional)</label>
+            <textarea id="td-requirements" placeholder="e.g. Email must be valid format, Phone must be 10 digits"></textarea>
+        </div>
+        <button class="btn" id="td-btn" onclick="generateTestData()">🤖 Generate Test Data with AI</button>
+        <div class="loading" id="td-loading">⏳ AI is generating test data sets</div>
+        <div class="result-box" id="td-result"></div>
+        <div id="td-actions" style="display:none">
+            <button class="copy-btn" onclick="copyResult('td-result')">📋 Copy Test Data</button>
+        </div>
+    </div>
+</div>
+
+<footer>
+    <p>🤖 AI QA Assistant | Built by Sarbani Mondal | QA Analyst Portfolio Project | May 2026</p>
+    <p>Powered by Groq AI | Python Flask | Portfolio Project</p>
+</footer>
+
+<script>
+let count = 0;
+
+function toggleDark() {
+    const html = document.documentElement;
+    const btn = document.getElementById('darkBtn');
+    if (html.getAttribute('data-theme') === 'dark') {
+        html.setAttribute('data-theme', 'light');
+        btn.textContent = '🌙 Dark Mode';
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        btn.textContent = '☀️ Light Mode';
+    }
+}
+
+function showTab(tab, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(tab).classList.add('active');
+    el.classList.add('active');
+}
+
+async function generateTestCases() {
+    const module = document.getElementById('tc-module').value;
+    const fields = document.getElementById('tc-fields').value;
+    if (!module || !fields) { alert('Please enter module name and fields!'); return; }
+    document.getElementById('tc-loading').style.display = 'block';
+    document.getElementById('tc-result').style.display = 'none';
+    document.getElementById('tc-actions').style.display = 'none';
+    document.getElementById('tc-btn').disabled = true;
+    try {
+        const response = await fetch('/generate-testcases', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({module, fields})
+        });
+        const data = await response.json();
+        document.getElementById('tc-result').textContent = data.result;
+        document.getElementById('tc-result').style.display = 'block';
+        document.getElementById('tc-actions').style.display = 'block';
+        count++; document.getElementById('stat-count').textContent = count;
+    } catch (e) { alert('Error! Please try again.'); }
+    document.getElementById('tc-loading').style.display = 'none';
+    document.getElementById('tc-btn').disabled = false;
+}
+
+async function generateBugReport() {
+    const description = document.getElementById('bug-desc').value;
+    const module = document.getElementById('bug-module').value;
+    if (!description) { alert('Please describe the bug!'); return; }
+    document.getElementById('bug-loading').style.display = 'block';
+    document.getElementById('bug-result').style.display = 'none';
+    document.getElementById('bug-actions').style.display = 'none';
+    document.getElementById('bug-btn').disabled = true;
+    try {
+        const response = await fetch('/generate-bugreport', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({description, module})
+        });
+        const data = await response.json();
+        document.getElementById('bug-result').textContent = data.result;
+        document.getElementById('bug-result').style.display = 'block';
+        document.getElementById('bug-actions').style.display = 'block';
+        count++; document.getElementById('stat-count').textContent = count;
+    } catch (e) { alert('Error! Please try again.'); }
+    document.getElementById('bug-loading').style.display = 'none';
+    document.getElementById('bug-btn').disabled = false;
+}
+
+async function generateTestData() {
+    const field_type = document.getElementById('td-field').value;
+    if (!field_type) { alert('Please enter field type!'); return; }
+    document.getElementById('td-loading').style.display = 'block';
+    document.getElementById('td-result').style.display = 'none';
+    document.getElementById('td-actions').style.display = 'none';
+    document.getElementById('td-btn').disabled = true;
+    try {
+        const response = await fetch('/generate-testdata', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({field_type})
+        });
+        const data = await response.json();
+        document.getElementById('td-result').textContent = data.result;
+        document.getElementById('td-result').style.display = 'block';
+        document.getElementById('td-actions').style.display = 'block';
+        count++; document.getElementById('stat-count').textContent = count;
+    } catch (e) { alert('Error! Please try again.'); }
+    document.getElementById('td-loading').style.display = 'none';
+    document.getElementById('td-btn').disabled = false;
+}
+
+function copyResult(id) {
+    navigator.clipboard.writeText(document.getElementById(id).textContent);
+    alert('Copied to clipboard!');
+}
+</script>
+</body>
+</html>
