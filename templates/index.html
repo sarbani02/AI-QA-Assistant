@@ -262,6 +262,8 @@
         <div id="tc-actions" style="display:none">
             <button class="copy-btn" onclick="copyResult('tc-result')">📋 Copy Test Cases</button>
             <a class="pdf-btn" href="/download-pdf">📄 Download PDF</a>
+            <button class="copy-btn" style="background:#1A7A4A" onclick="downloadExcel()">📊 Export to Excel</button>
+        </div>
         </div>
     </div>
 
@@ -405,6 +407,21 @@ async function generateTestData() {
 function copyResult(id) {
     navigator.clipboard.writeText(document.getElementById(id).textContent);
     alert('Copied to clipboard!');
+}
+
+async function downloadExcel() {
+    const content = document.getElementById('tc-result').textContent;
+    const response = await fetch('/download-excel', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({content: content})
+    });
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'QA_Test_Cases.xlsx';
+    a.click();
 }
 </script>
 </body>
